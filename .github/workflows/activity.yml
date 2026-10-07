@@ -1,0 +1,41 @@
+name: activity
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: github-pages
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - run: node scripts/activity.mjs dist/activity.svg
+        env:
+          LOGIN: ${{ github.repository_owner }}
+          REPO: ${{ github.repository }}
+          TOKEN: ${{ secrets.ACTIVITY_TOKEN || github.token }}
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+      - uses: actions/deploy-pages@v5
